@@ -347,7 +347,16 @@
     };
 
     // Initialization logic
-    document.addEventListener('DOMContentLoaded', function() {
+    let initialized = false;
+    function init() {
+        if (initialized) return;
+        if (!document.body) {
+            // If body isn't ready, try again shortly
+            setTimeout(init, 50);
+            return;
+        }
+        initialized = true;
+
         UI.injectStyles();
         UI.initTheme();
         UI.createBottomNav();
@@ -356,7 +365,20 @@
         UI.contentCleanup();
         UI.readingOptimizer();
         console.log('BetterFLVS initialized.');
-    });
+    }
+
+    // Run as early as possible for styles/theme
+    UI.injectStyles();
+    UI.initTheme();
+
+    // Body-dependent initialization
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+        init();
+    } else {
+        document.addEventListener('DOMContentLoaded', init);
+        // Fallback for some mobile browsers
+        window.addEventListener('load', init);
+    }
 
 
 
