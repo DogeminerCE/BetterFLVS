@@ -35,17 +35,16 @@
                 }
 
                 [data-bflvs-theme="dark"] {
-                    --bflvs-bg: #121212;
-                    --bflvs-text: #e0e0e0;
-                    --bflvs-nav-bg: #1e1e1e;
-                    --bflvs-card-bg: #1e1e1e;
-                    --bflvs-border: #333333;
-                    --bflvs-fab-bg: #3700b3;
+                    --bflvs-bg: #1a1a1a;
+                    --bflvs-text: #f0f0f0;
+                    --bflvs-nav-bg: #2d2d2d;
+                    --bflvs-card-bg: #242424;
+                    --bflvs-border: #444444;
+                    --bflvs-fab-bg: #3d5afe;
                 }
 
                 /* Mobile Optimizations */
                 @media (max-width: 768px) {
-                    /* Bottom Navigation Bar */
                     #bflvs-bottom-nav {
                         position: fixed;
                         bottom: 0;
@@ -80,7 +79,6 @@
                         margin-bottom: 2px;
                     }
 
-                    /* Floating Action Button */
                     #bflvs-fab {
                         position: fixed;
                         right: 20px;
@@ -124,9 +122,9 @@
                         align-items: center;
                         box-shadow: 0 2px 5px rgba(0,0,0,0.2);
                         text-decoration: none;
+                        border: none;
                     }
 
-                    /* Content Cleanup & Navigation Hiding */
                     header, #header, .navbar, #toolbar, .nav-menu, .sidebar {
                         display: none !important;
                     }
@@ -139,19 +137,30 @@
                     }
                 }
 
-                /* Reading Mode */
-                .bflvs-reading-mode {
-                    font-size: 19px !important;
-                    line-height: 1.7 !important;
-                    max-width: 800px !important;
-                    margin: 0 auto !important;
-                    padding: 20px !important;
-                    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
+                /* Manual Dark Mode Overrides (Cleaner than filter) */
+                [data-bflvs-theme="dark"] body, 
+                [data-bflvs-theme="dark"] #main, 
+                [data-bflvs-theme="dark"] #content {
+                    background-color: var(--bflvs-bg) !important;
+                    color: var(--bflvs-text) !important;
                 }
 
-                .bflvs-reading-mode img {
-                    max-width: 100% !important;
-                    height: auto !important;
+                [data-bflvs-theme="dark"] .card, 
+                [data-bflvs-theme="dark"] .module,
+                [data-bflvs-theme="dark"] table,
+                [data-bflvs-theme="dark"] tr,
+                [data-bflvs-theme="dark"] td,
+                [data-bflvs-theme="dark"] th,
+                [data-bflvs-theme="dark"] div:not([id^="bflvs"]) {
+                    background-color: transparent !important;
+                    color: inherit !important;
+                    border-color: var(--bflvs-border) !important;
+                }
+
+                /* Specific fixes for teacher pages in dark mode */
+                [data-bflvs-theme="dark"] .teacher-content-wrapper,
+                [data-bflvs-theme="dark"] .homepage-container {
+                    background-color: var(--bflvs-card-bg) !important;
                 }
 
                 /* Restore Button */
@@ -166,23 +175,6 @@
                     margin-top: 5px;
                     display: block;
                 }
-
-                /* Global Dark Mode Filter */
-                [data-bflvs-theme="dark"] {
-                    filter: invert(1) hue-rotate(180deg);
-                }
-
-                [data-bflvs-theme="dark"] img, 
-                [data-bflvs-theme="dark"] video, 
-                [data-bflvs-theme="dark"] .bflvs-nav-item span,
-                [data-bflvs-theme="dark"] #bflvs-fab,
-                [data-bflvs-theme="dark"] #bflvs-bottom-nav {
-                    filter: invert(1) hue-rotate(180deg);
-                }
-
-                [data-bflvs-theme="dark"] body {
-                    background-color: #eee !important; /* Becomes dark after inversion */
-                }
             `;
             GM_addStyle(styles);
         },
@@ -190,10 +182,13 @@
         initTheme: function() {
             if (CONFIG.dark_mode) {
                 document.documentElement.setAttribute('data-bflvs-theme', 'dark');
+            } else {
+                document.documentElement.setAttribute('data-bflvs-theme', 'light');
             }
         },
 
         createBottomNav: function() {
+            if (window.self !== window.top) return; // Prevent in iframes
             if (!CONFIG.bottom_nav || window.innerWidth > 768) return;
 
             const nav = document.createElement('div');
