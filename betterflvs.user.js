@@ -45,11 +45,6 @@
 
                 /* Mobile Optimizations */
                 @media (max-width: 768px) {
-                    /* Hide bulky headers and sidebars if distraction-free is on */
-                    .distraction-free-hide {
-                        display: none !important;
-                    }
-
                     /* Bottom Navigation Bar */
                     #bflvs-bottom-nav {
                         position: fixed;
@@ -73,6 +68,10 @@
                         text-decoration: none;
                         font-size: 10px;
                         flex: 1;
+                        cursor: pointer;
+                        border: none;
+                        background: none;
+                        padding: 0;
                     }
 
                     .bflvs-nav-item span {
@@ -127,15 +126,17 @@
                         text-decoration: none;
                     }
 
-                /* Content Cleanup */
-                #toolbar, #header, .sidebar, .nav-menu {
-                    display: none !important;
-                }
+                    /* Content Cleanup & Navigation Hiding */
+                    header, #header, .navbar, #toolbar, .nav-menu, .sidebar {
+                        display: none !important;
+                    }
 
-                #main, #content {
-                    margin-left: 0 !important;
-                    margin-right: 0 !important;
-                    padding-bottom: 80px !important;
+                    #main, #content, .main-content {
+                        margin: 0 !important;
+                        padding: 10px !important;
+                        padding-bottom: 80px !important;
+                        width: 100% !important;
+                    }
                 }
 
                 /* Reading Mode */
@@ -166,23 +167,21 @@
                     display: block;
                 }
 
-                /* Dark Mode Overrides */
-                [data-bflvs-theme="dark"] body {
-                    background-color: var(--bflvs-bg) !important;
-                    color: var(--bflvs-text) !important;
+                /* Global Dark Mode Filter */
+                [data-bflvs-theme="dark"] {
+                    filter: invert(1) hue-rotate(180deg);
                 }
 
+                [data-bflvs-theme="dark"] img, 
+                [data-bflvs-theme="dark"] video, 
+                [data-bflvs-theme="dark"] .bflvs-nav-item span,
+                [data-bflvs-theme="dark"] #bflvs-fab,
+                [data-bflvs-theme="dark"] #bflvs-bottom-nav {
+                    filter: invert(1) hue-rotate(180deg);
+                }
 
-                [data-bflvs-theme="dark"] .card, 
-                [data-bflvs-theme="dark"] .module, 
-                [data-bflvs-theme="dark"] #main,
-                [data-bflvs-theme="dark"] #content,
-                [data-bflvs-theme="dark"] table,
-                [data-bflvs-theme="dark"] input,
-                [data-bflvs-theme="dark"] textarea {
-                    background-color: var(--bflvs-card-bg) !important;
-                    color: var(--bflvs-text) !important;
-                    border-color: var(--bflvs-border) !important;
+                [data-bflvs-theme="dark"] body {
+                    background-color: #eee !important; /* Becomes dark after inversion */
                 }
             `;
             GM_addStyle(styles);
@@ -200,24 +199,58 @@
             const nav = document.createElement('div');
             nav.id = 'bflvs-bottom-nav';
             nav.innerHTML = `
-                <a href="/vsa/educator/student/lessons" class="bflvs-nav-item">
+                <button class="bflvs-nav-item" data-bflvs-action="Lessons">
                     <span>📚</span>
                     <div>Lessons</div>
-                </a>
-                <a href="/vsa/educator/student/assessments" class="bflvs-nav-item">
+                </button>
+                <button class="bflvs-nav-item" data-bflvs-action="Assessments">
                     <span>📝</span>
                     <div>Assess</div>
-                </a>
-                <a href="/vsa/educator/student/gradebook" class="bflvs-nav-item">
+                </button>
+                <button class="bflvs-nav-item" data-bflvs-action="Gradebook">
                     <span>📊</span>
                     <div>Grades</div>
-                </a>
-                <a href="/vsa/educator/student/email" class="bflvs-nav-item">
+                </button>
+                <button class="bflvs-nav-item" data-bflvs-action="Email">
                     <span>✉️</span>
                     <div>Email</div>
-                </a>
+                </button>
             `;
+            
+            nav.addEventListener('click', (e) => {
+                const btn = e.target.closest('.bflvs-nav-item');
+                if (btn) {
+                    const action = btn.getAttribute('data-bflvs-action');
+                    this.triggerOriginalNav(action);
+                }
+            });
+
             document.body.appendChild(nav);
+        },
+
+        triggerOriginalNav: function(keyword) {
+            console.log('Attempting to trigger:', keyword);
+            const links = Array.from(document.querySelectorAll('a, button'));
+            const target = links.find(el => {
+                const text = el.innerText.toLowerCase();
+                const href = el.href ? el.href.toLowerCase() : '';
+                return text.includes(keyword.toLowerCase()) || href.includes(keyword.toLowerCase());
+            });
+
+            if (target) {
+                console.log('Found target:', target);
+                target.click();
+            } else {
+                console.log('No target found for:', keyword, '. Falling back to URL guessing.');
+                // Fallback if the element isn't found (e.g. iframes or hidden deeper)
+                const paths = {
+                    'Lessons': '/vsa/educator/student/lessons',
+                    'Assessments': '/vsa/educator/student/assessments',
+                    'Gradebook': '/vsa/educator/student/gradebook',
+                    'Email': '/vsa/educator/student/email'
+                };
+                if (paths[keyword]) window.location.href = paths[keyword];
+            }
         },
 
         createFAB: function() {
@@ -230,8 +263,8 @@
             const menu = document.createElement('div');
             menu.className = 'bflvs-fab-menu';
             menu.innerHTML = `
-                <a href="/vsa/educator/student/announcements" class="bflvs-fab-item" title="Announcements">📢</a>
-                <a href="/vsa/educator/student/profile" class="bflvs-fab-item" title="Profile">👤</a>
+                <button class="bflvs-fab-item" data-bflvs-action="Announcements" title="Announcements">📢</button>
+                <button class="bflvs-fab-item" data-bflvs-action="Profile" title="Profile">👤</button>
                 <div class="bflvs-fab-item" id="bflvs-toggle-dark" title="Toggle Dark Mode">🌓</div>
             `;
 
@@ -239,10 +272,19 @@
                 menu.classList.toggle('active');
             });
 
+            menu.addEventListener('click', (e) => {
+                const btn = e.target.closest('[data-bflvs-action]');
+                if (btn) {
+                    const action = btn.getAttribute('data-bflvs-action');
+                    this.triggerOriginalNav(action);
+                }
+            });
+
             document.body.appendChild(fab);
             document.body.appendChild(menu);
 
-            document.getElementById('bflvs-toggle-dark').addEventListener('click', () => {
+            document.getElementById('bflvs-toggle-dark').addEventListener('click', (e) => {
+                e.stopPropagation();
                 const isDark = document.documentElement.getAttribute('data-bflvs-theme') === 'dark';
                 const newTheme = isDark ? 'light' : 'dark';
                 document.documentElement.setAttribute('data-bflvs-theme', newTheme);
